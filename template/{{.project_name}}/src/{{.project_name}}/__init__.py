@@ -1,1 +1,66 @@
-__version__ = "0.0.1"
+import os
+from dbruntime import get_databricks_shell
+import subprocess
+import platform
+
+def execute_binary(name):
+  """Provides the necessary environment variables to be able to execute
+  the code directly from a notebook."""
+
+  # Load the Databricks shell and extract the necessary metadata
+  shell = get_databricks_shell()
+  cmd = shell.parent_header["metadata"]["commandMetadata"]
+
+  session_id = shell.parent_header["metadata"]["spark_connect_compute_session_id"]
+  clusterId = cmd["tags"]["clusterId"]
+
+  # Certain keys are only set when run in serverless jobs.
+  try:
+    affinity = cmd['extraContext']["sparkAffinityKey"]
+  except KeyError:
+    affinity = None
+  try:
+    channel = cmd['extraContext']["dbrPlatformChannel"]
+  except KeyError:
+    channel = None
+
+  token = cmd['extraContext']['api_token']
+
+  os.environ["DATABRICKS_SERVERLESS_SESSION_ID"] = session_id
+  os.environ["DATABRICKS_SERVERLESS_CLUSTER_ID"] = clusterId
+  os.environ["DATABRICKS_API_TOKEN"] = token
+
+  if affinity:
+    os.environ["DATABRICKS_SERVERLESS_AFFINITY"] = affinity
+
+  if channel:
+    os.environ["DATABRICKS_SERVERLESS_CHANNEL"] = channel
+
+  port = int(shell.spark_config.get("databricks.manager.mtlsControlPlaneClientPort", "7073"))
+  if port:
+    os.environ["DATABRICKS_SERVERLESS_ADD_PORT"] = str(port)
+
+  # Run the binary directly, if the binary exits with a non-zero exit code
+  # we will fail the job.
+  print(subprocess.check_output(name, text=True, shell=True, env=os.environ))
+
+
+def rel_path():
+  import golangiscool
+  return os.path.abspath(os.path.join(os.path.dirname(golangiscool.__file__), "..", ".."))
+
+
+def binary_name(name):
+  return os.path.abspath(os.path.join(rel_path(), name))
+
+
+def main():
+  uname = platform.uname()
+  # Currently we only support two different build kinds, one is ARM and the other one is X86 Linux
+  version_str = uname.version.lower()
+  if 'darwin' in version_str and 'arm64' in version_str:
+    execute_binary("src/gosrc/main_darwin_arm64")
+  elif 'linux' in version_str:
+    execute_binary("src/gosrc/main_linux_x86_64")
+  else:
+    raise ValueError(f"Could not detect proper binary for OS Version: {uname.version}")

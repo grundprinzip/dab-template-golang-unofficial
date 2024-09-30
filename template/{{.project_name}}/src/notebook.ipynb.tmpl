@@ -44,13 +44,9 @@
    },
    "outputs": [],
    "source": [
-   {{- if (eq .include_python "yes") }}
     "from {{.project_name}} import main\n",
     "\n",
-    "main.get_taxis(spark).show(10)"
-   {{else}}
-    "spark.range(10)"
-   {{end -}}
+    "main()"
    ]
   }
  ],
