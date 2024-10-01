@@ -1,0 +1,10 @@
+package transforms
+
+import (
+	"context"
+	"github.com/apache/spark-connect-go/v35/spark/sql"
+)
+
+func Transform(ctx context.Context, df sql.DataFrame) (sql.DataFrame, error) {
+	return df.FilterByString(ctx, "fare_amount > 10")
+}
