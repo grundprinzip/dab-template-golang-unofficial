@@ -11,7 +11,10 @@ def execute_binary(name):
   shell = get_databricks_shell()
   cmd = shell.parent_header["metadata"]["commandMetadata"]
 
-  session_id = shell.parent_header["metadata"]["spark_connect_compute_session_id"]
+  if "spark_connect_compute_session_id" in shell.parent_header["metadata"]:
+    session_id = shell.parent_header["metadata"]["spark_connect_compute_session_id"]
+  else:
+    session_id = None
   clusterId = cmd["tags"]["clusterId"]
 
   # Certain keys are only set when run in serverless jobs.
@@ -26,7 +29,9 @@ def execute_binary(name):
 
   token = cmd['extraContext']['api_token']
 
-  os.environ["DATABRICKS_SERVERLESS_SESSION_ID"] = session_id
+  if session_id is not None:
+    os.environ["DATABRICKS_SERVERLESS_SESSION_ID"] = session_id
+
   os.environ["DATABRICKS_SERVERLESS_CLUSTER_ID"] = clusterId
   os.environ["DATABRICKS_API_TOKEN"] = token
 
@@ -46,8 +51,8 @@ def execute_binary(name):
 
 
 def rel_path():
-  import golangiscool
-  return os.path.abspath(os.path.join(os.path.dirname(golangiscool.__file__), "..", ".."))
+  import {{.project_name}}
+  return os.path.abspath(os.path.join(os.path.dirname({{.project_name}}.__file__), "..", ".."))
 
 
 def binary_name(name):
