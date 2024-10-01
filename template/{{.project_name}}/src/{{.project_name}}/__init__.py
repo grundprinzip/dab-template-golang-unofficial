@@ -60,7 +60,7 @@ def main():
   version_str = uname.version.lower()
   if 'darwin' in version_str and 'arm64' in version_str:
     execute_binary("src/gosrc/main_darwin_arm64")
-  elif 'linux' in version_str:
+  elif 'linux' in version_str or 'ubuntu' in version_str:
     execute_binary("src/gosrc/main_linux_x86_64")
   else:
     raise ValueError(f"Could not detect proper binary for OS Version: {uname.version}")
