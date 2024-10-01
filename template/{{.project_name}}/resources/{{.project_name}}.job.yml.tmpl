@@ -25,6 +25,8 @@ resources:
           new_cluster:
             spark_version: {{template "latest_lts_dbr_version"}}
             node_type_id: {{smallest_node_type}}
+            data_security_mode: SINGLE_USER
+            single_user_name: {{user_name}}
             autoscale:
                 min_workers: 1
                 max_workers: 4
